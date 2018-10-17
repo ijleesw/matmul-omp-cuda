@@ -14,10 +14,13 @@
 #endif
 using namespace std;
 
+#ifdef OMP
+#include <omp.h>
+#endif
+
 #include "strassen.hpp"
 #include "classical.hpp"
-
-typedef pair<int, int> pii;
+#include "utils.hpp"
 
 
 int*** A;
@@ -103,8 +106,10 @@ void reset()
 		for (int j = 0; j < dim; ++j) {
 			for (int k = 0; k < dim; ++k)
 			{
-				A[i][j][k] = rand() % MOD;
-				B[i][j][k] = rand() % MOD;
+				// A[i][j][k] = rand() % MOD;
+				// B[i][j][k] = rand() % MOD;
+				A[i][j][k] = 1;
+				B[i][j][k] = 1;
 
 				if (i == 0) {
 					C[i][j][k] = 0;
@@ -122,7 +127,6 @@ void reset()
 
 int main(int argc, char** argv)
 {
-	clock_t tic, toc;
 	double time_elapsed[300], avg_time;
 
 	init_memory();
@@ -146,11 +150,11 @@ int main(int argc, char** argv)
 	{
 		reset();
 
-		tic = clock();
+		tic();
 		strassen_mm(C, A, B, DIM, 0);
-		toc = clock();
+		toc();
 
-		time_elapsed[cnt] = (double)(toc-tic)/CLOCKS_PER_SEC;
+		time_elapsed[cnt] = get_elapsed_time();
 		avg_time += time_elapsed[cnt];
 
 		if ((cnt+1) % 100 == 0) cout << "Test " << cnt+1 << " done.\n";
@@ -167,11 +171,11 @@ int main(int argc, char** argv)
 	{
 		reset();
 
-		tic = clock();
+		tic();
 		classical_mm(C, A, B, DIM, 0);
-		toc = clock();
+		toc();
 
-		time_elapsed[cnt] = (double)(toc-tic)/CLOCKS_PER_SEC;
+		time_elapsed[cnt] = get_elapsed_time();
 		avg_time += time_elapsed[cnt];
 
 		if ((cnt+1) % 100 == 0) cout << "Test " << cnt+1 << " done.\n";

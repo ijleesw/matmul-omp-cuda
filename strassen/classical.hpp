@@ -6,12 +6,13 @@
 #include <bits/stdc++.h>
 #endif
 
-typedef pair<int, int> pii;
 
 extern int*** A;
 extern int*** B;
 extern int*** C;
 
+
+#ifndef OMP
 void classical_mm(int*** C, int*** A, int*** B, const int& dim, const int& lv)
 {
 	for (int i = 0; i < dim; ++i) {
@@ -22,3 +23,22 @@ void classical_mm(int*** C, int*** A, int*** B, const int& dim, const int& lv)
 				C[lv][i][j] += A[lv][i][k] * B[lv][k][j];
 	}
 }
+
+
+#else
+void classical_mm(int*** C, int*** A, int*** B, const int& dim, const int& lv)
+{
+#pragma omp parallel for
+	for (int i = 0; i < dim; ++i) {
+		for (int j = 0; j < dim; ++j) {
+			int sum = 0;
+			for (int k = 0; k < dim; ++k) {
+				sum += A[lv][i][k] * B[lv][k][k];
+			}
+			C[lv][i][j] = sum;
+		}
+	}
+}
+
+
+#endif
