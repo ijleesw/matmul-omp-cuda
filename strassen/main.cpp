@@ -1,7 +1,3 @@
-/*
- *  Compile with :
- *    $ g++ -O2 -DDIM=1024 -DTHRESHOLD=32 main.cpp
- */
 // #define DIM 1024
 #define MAX_DEPTH 20  // Requirement: 2^MAX_DEPTH > DIM
 
