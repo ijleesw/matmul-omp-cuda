@@ -1,6 +1,6 @@
 #pragma once
 
-#define THRESHOLD 64
+#define THRESHOLD 32
 
 #ifdef __APPLE__
 #include "bits/stdc++.h"

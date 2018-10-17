@@ -1,4 +1,4 @@
-#define DIM 1024
+#define DIM 512
 #define MOD 10
 #define MAX_DEPTH 14
 
