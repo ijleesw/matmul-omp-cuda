@@ -8,6 +8,8 @@ extern int A[DIM][DIM];
 extern int B[DIM][DIM];
 extern int C[DIM][DIM];
 
+typedef pair<int, int> pii;
+
 void classical_mm_cache(const pii& A_s, const pii& B_s, const int& dim)
 {
 	/*

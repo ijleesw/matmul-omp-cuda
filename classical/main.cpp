@@ -1,5 +1,5 @@
 #define DIM 256
-#define MAX 1024
+#define MOD 1024
 
 #ifdef __APPLE__
 #include "bits/stdc++.h"
@@ -8,9 +8,9 @@
 #endif
 using namespace std;
 
-typedef pair<int, int> pii;
-
 #include "classical.hpp"
+
+typedef pair<int, int> pii;
 
 int A[DIM][DIM];
 int B[DIM][DIM];
@@ -22,11 +22,11 @@ void init()
 {
 	for (int i = 0; i < DIM; ++i)
 		for (int j = 0; j < DIM; ++j)
-			A[i][j] = rand() % MAX;
+			A[i][j] = rand() % MOD;
 
 	for (int i = 0; i < DIM; ++i)
 		for (int j = 0; j < DIM; ++j)
-			B[i][j] = rand() % MAX;
+			B[i][j] = rand() % MOD;
 
 	fill(&C[0][0], &C[0][0]+DIM*DIM, 0);
 }
