@@ -2,6 +2,8 @@
 
 A comparison of naive matmul and cache-efficient matmul.
 
+
+
 ## Usage
 
 ```bash
@@ -13,7 +15,11 @@ $ ./test
 
 ## Experimental Results
 
-Experimented on Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz. Results are averaged over 200 experiments.
+Results are averaged over 200 experiments.
+
+
+
+On Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz (macOS 10.13) :
 
 | Dimension | Cache-Efficient (sec) | Naive (sec) |
 | :-------: | :-------------------: | :---------: |
@@ -25,4 +31,16 @@ Experimented on Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz. Results are averaged o
 |    128    |      0.00030897       | 0.00156092  |
 |    256    |      0.00234298       |  0.0119725  |
 |    512    |       0.0199395       |  0.213967   |
+
+
+
+On Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz (Ubuntu 16.04 LTS) :
+
+| Dimension | Cache-Efficient (sec) | Naive (sec) |
+| :-------: | :-------------------: | :---------: |
+|    32     |      5.0415e-05       |  3.249e-05  |
+|    64     |      0.000415865      | 0.00026043  |
+|    128    |      0.00244401       | 0.00206899  |
+|    256    |       0.0182932       |  0.0307875  |
+|    512    |       0.144318        |  0.282904   |
 
