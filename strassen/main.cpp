@@ -1,6 +1,11 @@
-#define DIM 512
+/*
+ *  Compile with :
+ *    $ clang++ -O2 -DDIM=1024 -DTHRESHOLD=32 main.cpp
+ */
+// #define DIM 1024
+#define MAX_DEPTH 20  // Requirement: 2^MAX_DEPTH > DIM
+
 #define MOD 10
-#define MAX_DEPTH 14
 
 #ifdef __APPLE__
 #include "bits/stdc++.h"
@@ -14,51 +19,77 @@ using namespace std;
 
 typedef pair<int, int> pii;
 
-int A[MAX_DEPTH][DIM][DIM];
-int B[MAX_DEPTH][DIM][DIM];
-int C[MAX_DEPTH][DIM][DIM];
 
-int M1[MAX_DEPTH][DIM][DIM];
-int M2[MAX_DEPTH][DIM][DIM];
-int M3[MAX_DEPTH][DIM][DIM];
-int M4[MAX_DEPTH][DIM][DIM];
-int M5[MAX_DEPTH][DIM][DIM];
-int M6[MAX_DEPTH][DIM][DIM];
-int M7[MAX_DEPTH][DIM][DIM];
+int*** A;
+int*** B;
+int*** C;
 
-int N_WARMUP = 5;
-int N_TEST = 10;
+int*** M1;
+int*** M2;
+int*** M3;
+int*** M4;
+int*** M5;
+int*** M6;
+int*** M7;
+
+
+int N_WARMUP = 2;
+int N_TEST = 5;
+
 
 void init()
 {
-	for (int i = 0; i < DIM; ++i)
-		for (int j = 0; j < DIM; ++j)
-			A[0][i][j] = rand() % MOD;
+	int dim = DIM;
 
-	for (int i = 0; i < DIM; ++i)
-		for (int j = 0; j < DIM; ++j)
-			B[0][i][j] = rand() % MOD;
+	A = new int**[MAX_DEPTH];
+	B = new int**[MAX_DEPTH];
+	C = new int**[MAX_DEPTH];
 
-	fill(&C[0][0][0], &C[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
+	M1 = new int**[MAX_DEPTH];
+	M2 = new int**[MAX_DEPTH];
+	M3 = new int**[MAX_DEPTH];
+	M4 = new int**[MAX_DEPTH];
+	M5 = new int**[MAX_DEPTH];
+	M6 = new int**[MAX_DEPTH];
+	M7 = new int**[MAX_DEPTH];
 
-	fill(&M1[0][0][0], &M1[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
-	fill(&M2[0][0][0], &M2[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
-	fill(&M3[0][0][0], &M3[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
-	fill(&M4[0][0][0], &M4[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
-	fill(&M5[0][0][0], &M5[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
-	fill(&M6[0][0][0], &M6[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
-	fill(&M7[0][0][0], &M7[0][0][0]+MAX_DEPTH*DIM*DIM, 0);
+	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i) {
+		A[i] = new int*[dim], B[i] = new int*[dim], C[i] = new int*[dim];
+		M1[i] = new int*[dim], M2[i] = new int*[dim], M3[i] = new int*[dim];
+		M4[i] = new int*[dim], M5[i] = new int*[dim], M6[i] = new int*[dim], M7[i] = new int*[dim];
+		for (int j = 0; j < dim; ++j) {
+			A[i][j] = new int[dim], B[i][j] = new int[dim], C[i][j] = new int[dim];
+			M1[i][j] = new int[dim], M2[i][j] = new int[dim], M3[i][j] = new int[dim];
+			M4[i][j] = new int[dim], M5[i][j] = new int[dim], M6[i][j] = new int[dim], M7[i][j] = new int[dim];
+		}
+		dim /= 2;
+	}
+}
+
+void reset()
+{
+	int dim = DIM;
+	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i) {
+		for (int j = 0; j < dim; ++j) {
+			for (int k = 0; k < dim; ++k) {
+				A[i][j][k] = rand() % MOD, B[i][j][k] = rand() % MOD;
+				M7[i][j][k] = M6[i][j][k] = M5[i][j][k] = M4[i][j][k] = M3[i][j][k] = M2[i][j][k] = M1[i][j][k] = C[i][j][k] = 0;
+			}
+		}
+		dim /= 2;
+	}
 }
 
 
 int main(int argc, char** argv)
 {
+	init();
 	srand(time(0));
 
 	/* Warm-up */
 
 	for (int cnt = 0; cnt < N_WARMUP; ++cnt) {
-		init();
+		reset();
 		strassen_mm(C, A, B, pii(0,0), pii(0,0), pii(0,0), DIM, 0);
 	}
 	cout << "Warm-up done.\n" << endl;
@@ -70,7 +101,7 @@ int main(int argc, char** argv)
 	double time_elapsed[300], avg_time = 0;
 
 	for (int cnt = 0; cnt < N_TEST; ++cnt) {
-		init();
+		reset();
 
 		tic = clock();
 		strassen_mm(C, A, B, pii(0,0), pii(0,0), pii(0,0), DIM, 0);
@@ -90,7 +121,7 @@ int main(int argc, char** argv)
 
 	avg_time = 0;
 	for (int cnt = 0; cnt < N_TEST; ++cnt) {
-		init();
+		reset();
 
 		tic = clock();
 		classical_mm(C, A, B, pii(0,0), pii(0,0), pii(0,0), DIM, 0);

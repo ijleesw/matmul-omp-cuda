@@ -1,6 +1,6 @@
 #pragma once
 
-#define THRESHOLD 32
+// #define THRESHOLD 32
 
 #ifdef __APPLE__
 #include "bits/stdc++.h"
@@ -12,23 +12,23 @@
 
 typedef pair<int, int> pii;
 
-extern int A[MAX_DEPTH][DIM][DIM];
-extern int B[MAX_DEPTH][DIM][DIM];
-extern int C[MAX_DEPTH][DIM][DIM];
+extern int*** A;
+extern int*** B;
+extern int*** C;
 
-extern int M1[MAX_DEPTH][DIM][DIM];
-extern int M2[MAX_DEPTH][DIM][DIM];
-extern int M3[MAX_DEPTH][DIM][DIM];
-extern int M4[MAX_DEPTH][DIM][DIM];
-extern int M5[MAX_DEPTH][DIM][DIM];
-extern int M6[MAX_DEPTH][DIM][DIM];
-extern int M7[MAX_DEPTH][DIM][DIM];
+extern int*** M1;
+extern int*** M2;
+extern int*** M3;
+extern int*** M4;
+extern int*** M5;
+extern int*** M6;
+extern int*** M7;
 
 
 /*
  * Reference: https://en.wikipedia.org/wiki/Strassen_algorithm
  */
-void strassen_mm(int (*C)[DIM][DIM], int (*A)[DIM][DIM], int (*B)[DIM][DIM], const pii& A_s, const pii& B_s, const pii& C_s, const int& dim, const int& lv)
+void strassen_mm(int*** C, int*** A, int*** B, const pii& A_s, const pii& B_s, const pii& C_s, const int& dim, const int& lv)
 {
 	int dim_2 = dim/2;
 	if (dim <= THRESHOLD) {
@@ -40,46 +40,46 @@ void strassen_mm(int (*C)[DIM][DIM], int (*A)[DIM][DIM], int (*B)[DIM][DIM], con
 	/**** M1 ****/
 	for (int i = A_s.first; i < A_s.first+dim_2; ++i)
 		for (int j = A_s.second; j < A_s.second+dim_2; ++j)
-			A[lv+1][i][j] = A[lv][i][j] + A[lv][i+dim_2][j+dim_2];
+			A[lv+1][i-A_s.first][j-A_s.second] = A[lv][i][j] + A[lv][i+dim_2][j+dim_2];
 
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
 		for (int j = B_s.second; j < B_s.second+dim_2; ++j)
-			B[lv+1][i][j] = B[lv][i][j] + B[lv][i+dim_2][j+dim_2];
+			B[lv+1][i-B_s.first][j-B_s.second] = B[lv][i][j] + B[lv][i+dim_2][j+dim_2];
 
-	strassen_mm(M1, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M1, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** M2 ****/
 	for (int i = A_s.first; i < A_s.first+dim_2; ++i)
 		for (int j = A_s.second; j < A_s.second+dim_2; ++j)
-			A[lv+1][i][j] = A[lv][i+dim_2][j] + A[lv][i+dim_2][j+dim_2];
+			A[lv+1][i-A_s.first][j-A_s.second] = A[lv][i+dim_2][j] + A[lv][i+dim_2][j+dim_2];
 
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
-		copy(&B[lv][i][B_s.second], &B[lv][i][B_s.second]+dim_2, &B[lv+1][i][B_s.second]);
+		copy(&B[lv][i][B_s.second], &B[lv][i][B_s.second]+dim_2, &B[lv+1][i-B_s.first][0]);
 
-	strassen_mm(M2, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M2, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** M3 ****/
 	for (int i = A_s.first; i < A_s.first+dim_2; ++i)
-		copy(&A[lv][i][A_s.second], &A[lv][i][A_s.second]+dim_2, &A[lv+1][i][A_s.second]);
+		copy(&A[lv][i][A_s.second], &A[lv][i][A_s.second]+dim_2, &A[lv+1][i-A_s.first][0]);
 
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
 		for (int j = B_s.second; j < B_s.second+dim_2; ++j)
-			B[lv+1][i][j] = B[lv][i][j+dim_2] - B[lv][i+dim_2][j+dim_2];
+			B[lv+1][i-B_s.first][j-B_s.second] = B[lv][i][j+dim_2] - B[lv][i+dim_2][j+dim_2];
 
-	strassen_mm(M3, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M3, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** M4 ****/
 	for (int i = A_s.first; i < A_s.first+dim_2; ++i)
-		copy(&A[lv][i+dim_2][A_s.second+dim_2], &A[lv][i+dim_2][A_s.second+dim_2]+dim_2, &A[lv+1][i][A_s.second]);
+		copy(&A[lv][i+dim_2][A_s.second+dim_2], &A[lv][i+dim_2][A_s.second+dim_2]+dim_2, &A[lv+1][i-A_s.first][0]);
 
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
 		for (int j = B_s.second; j < B_s.second+dim_2; ++j)
-			B[lv+1][i][j] = B[lv][i+dim_2][j] - B[lv][i][j];
+			B[lv+1][i-B_s.first][j-B_s.second] = B[lv][i+dim_2][j] - B[lv][i][j];
 
-	strassen_mm(M4, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M4, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** M5 ****/
@@ -90,31 +90,31 @@ void strassen_mm(int (*C)[DIM][DIM], int (*A)[DIM][DIM], int (*B)[DIM][DIM], con
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
 		copy(&B[lv][i+dim_2][B_s.second+dim_2], &B[lv][i+dim_2][B_s.second+dim_2]+dim_2, &B[lv+1][i][B_s.second]);
 
-	strassen_mm(M5, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M5, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** M6 ****/
 	for (int i = A_s.first; i < A_s.first+dim_2; ++i)
 		for (int j = A_s.second; j < A_s.second+dim_2; ++j)
-			A[lv+1][i][j] = A[lv][i+dim_2][j] - A[lv][i][j];
+			A[lv+1][i-A_s.first][j-A_s.second] = A[lv][i+dim_2][j] - A[lv][i][j];
 
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
 		for (int j = B_s.second; j < B_s.second+dim_2; ++j)
-			B[lv+1][i][j] = B[lv][i][j] + B[lv][i][j+dim_2];
+			B[lv+1][i-B_s.first][j-B_s.second] = B[lv][i][j] + B[lv][i][j+dim_2];
 
-	strassen_mm(M6, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M6, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** M7 ****/
 	for (int i = A_s.first; i < A_s.first+dim_2; ++i)
 		for (int j = A_s.second; j < A_s.second+dim_2; ++j)
-			A[lv+1][i][j] = A[lv][i][j+dim_2] - A[lv][i+dim_2][j+dim_2];
+			A[lv+1][i-A_s.first][j-A_s.second] = A[lv][i][j+dim_2] - A[lv][i+dim_2][j+dim_2];
 
 	for (int i = B_s.first; i < B_s.first+dim_2; ++i)
 		for (int j = B_s.second; j < B_s.second+dim_2; ++j)
-			B[lv+1][i][j] = B[lv][i+dim_2][j] + B[lv][i+dim_2][j+dim_2];
+			B[lv+1][i-B_s.first][j-B_s.second] = B[lv][i+dim_2][j] + B[lv][i+dim_2][j+dim_2];
 
-	strassen_mm(M7, A, B, A_s, B_s, pii(0,0), dim_2, lv+1);
+	strassen_mm(M7, A, B, pii(0,0), pii(0,0), pii(0,0), dim_2, lv+1);
 
 
 	/**** C1 ****/
