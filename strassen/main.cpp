@@ -37,7 +37,7 @@ int N_WARMUP = 2;
 int N_TEST = 5;
 
 
-void init()
+void init_memory()
 {
 	int dim = DIM;
 
@@ -53,15 +53,44 @@ void init()
 	M6 = new int**[MAX_DEPTH];
 	M7 = new int**[MAX_DEPTH];
 
-	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i) {
-		A[i] = new int*[dim], B[i] = new int*[dim], C[i] = new int*[dim];
-		M1[i] = new int*[dim], M2[i] = new int*[dim], M3[i] = new int*[dim];
-		M4[i] = new int*[dim], M5[i] = new int*[dim], M6[i] = new int*[dim], M7[i] = new int*[dim];
+	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i)
+	{
+		A[i] = new int*[dim];
+		B[i] = new int*[dim];
+
 		for (int j = 0; j < dim; ++j) {
-			A[i][j] = new int[dim], B[i][j] = new int[dim], C[i][j] = new int[dim];
-			M1[i][j] = new int[dim], M2[i][j] = new int[dim], M3[i][j] = new int[dim];
-			M4[i][j] = new int[dim], M5[i][j] = new int[dim], M6[i][j] = new int[dim], M7[i][j] = new int[dim];
+			A[i][j] = new int[dim];
+			B[i][j] = new int[dim];
 		}
+
+		if (i == 0) {
+			C[i] = new int*[dim];
+
+			for (int j = 0; j < dim; ++j) {
+				C[i][j] = new int[dim];
+			}
+		}
+
+		else {  // i >= 1
+			M1[i] = new int*[dim];
+			M2[i] = new int*[dim];
+			M3[i] = new int*[dim];
+			M4[i] = new int*[dim];
+			M5[i] = new int*[dim];
+			M6[i] = new int*[dim];
+			M7[i] = new int*[dim];
+
+			for (int j = 0; j < dim; ++j) {
+				M1[i][j] = new int[dim];
+				M2[i][j] = new int[dim];
+				M3[i][j] = new int[dim];
+				M4[i][j] = new int[dim];
+				M5[i][j] = new int[dim];
+				M6[i][j] = new int[dim];
+				M7[i][j] = new int[dim];
+			}
+		}
+
 		dim /= 2;
 	}
 }
@@ -69,13 +98,23 @@ void init()
 void reset()
 {
 	int dim = DIM;
-	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i) {
+	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i)
+	{
 		for (int j = 0; j < dim; ++j) {
-			for (int k = 0; k < dim; ++k) {
-				A[i][j][k] = rand() % MOD, B[i][j][k] = rand() % MOD;
-				M7[i][j][k] = M6[i][j][k] = M5[i][j][k] = M4[i][j][k] = M3[i][j][k] = M2[i][j][k] = M1[i][j][k] = C[i][j][k] = 0;
+			for (int k = 0; k < dim; ++k)
+			{
+				A[i][j][k] = rand() % MOD;
+				B[i][j][k] = rand() % MOD;
+
+				if (i == 0) {
+					C[i][j][k] = 0;
+				}
+				else {  // i >= 1
+					M7[i][j][k] = M6[i][j][k] = M5[i][j][k] = M4[i][j][k] = M3[i][j][k] = M2[i][j][k] = M1[i][j][k] = 0;
+				}
 			}
 		}
+
 		dim /= 2;
 	}
 }
@@ -83,28 +122,32 @@ void reset()
 
 int main(int argc, char** argv)
 {
-	init();
+	clock_t tic, toc;
+	double time_elapsed[300], avg_time;
+
+	init_memory();
 	srand(time(0));
+
 
 	/* Warm-up */
 
-	for (int cnt = 0; cnt < N_WARMUP; ++cnt) {
+	for (int cnt = 0; cnt < N_WARMUP; ++cnt)
+	{
 		reset();
-		strassen_mm(C, A, B, pii(0,0), pii(0,0), pii(0,0), DIM, 0);
+		strassen_mm(C, A, B, DIM, 0);
 	}
 	cout << "Warm-up done.\n" << endl;
 
 
 	/* Test strassen_mm */
 
-	clock_t tic, toc;
-	double time_elapsed[300], avg_time = 0;
-
-	for (int cnt = 0; cnt < N_TEST; ++cnt) {
+	avg_time = 0;
+	for (int cnt = 0; cnt < N_TEST; ++cnt)
+	{
 		reset();
 
 		tic = clock();
-		strassen_mm(C, A, B, pii(0,0), pii(0,0), pii(0,0), DIM, 0);
+		strassen_mm(C, A, B, DIM, 0);
 		toc = clock();
 
 		time_elapsed[cnt] = (double)(toc-tic)/CLOCKS_PER_SEC;
@@ -120,11 +163,12 @@ int main(int argc, char** argv)
 	/* Test classical_mm */
 
 	avg_time = 0;
-	for (int cnt = 0; cnt < N_TEST; ++cnt) {
+	for (int cnt = 0; cnt < N_TEST; ++cnt)
+	{
 		reset();
 
 		tic = clock();
-		classical_mm(C, A, B, pii(0,0), pii(0,0), pii(0,0), DIM, 0);
+		classical_mm(C, A, B, DIM, 0);
 		toc = clock();
 
 		time_elapsed[cnt] = (double)(toc-tic)/CLOCKS_PER_SEC;
