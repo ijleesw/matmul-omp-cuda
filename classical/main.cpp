@@ -1,4 +1,4 @@
-#define DIM 256
+// #define DIM 256
 #define MOD 1024
 
 #ifdef __APPLE__

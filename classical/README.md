@@ -5,7 +5,7 @@ A comparison of naive matmul and cache-efficient matmul.
 ## Usage
 
 ```bash
-$ g++ -O2 -std=c++14 main.cpp -o test
+$ g++ -O2 -std=c++14 -DDIM=<dim_of_matrix> main.cpp -o test
 $ ./test
 ```
 
