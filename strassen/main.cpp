@@ -14,7 +14,9 @@ using namespace std;
 #include <omp.h>
 #endif
 
+
 typedef long double ring;
+
 
 #include "strassen.hpp"
 #include "classical.hpp"

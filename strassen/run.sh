@@ -11,7 +11,7 @@ do
 	echo ""
 	
 	echo "Multi-Thread :"
-	g++ -O2 -DDIM=$i -DTHRESHOLD=128 main.cpp -o test -Xpreprocessor -fopenmp -lomp -DOMP ; ./test
+	g++ -O2 -DDIM=$i -DTHRESHOLD=128 main.cpp -o test -DOMP -Xpreprocessor -fopenmp -lomp ; ./test
 	echo ""
 done
 
