@@ -11,24 +11,24 @@
 #include "classical.hpp"
 
 
-extern int*** A;
-extern int*** B;
-extern int*** C;
+extern ring*** A;
+extern ring*** B;
+extern ring*** C;
 
-extern int*** M1;
-extern int*** M2;
-extern int*** M3;
-extern int*** M4;
-extern int*** M5;
-extern int*** M6;
-extern int*** M7;
+extern ring*** M1;
+extern ring*** M2;
+extern ring*** M3;
+extern ring*** M4;
+extern ring*** M5;
+extern ring*** M6;
+extern ring*** M7;
 
 
 /*
  * Reference: https://en.wikipedia.org/wiki/Strassen_algorithm
  */
 #ifndef OMP
-void strassen_mm(int*** C, int*** A, int*** B, const int& dim, const int& lv)
+void strassen_mm(ring*** C, ring*** A, ring*** B, const int& dim, const int& lv)
 {
 	int dim_2 = dim/2;
 	if (dim <= THRESHOLD)
@@ -130,7 +130,7 @@ void strassen_mm(int*** C, int*** A, int*** B, const int& dim, const int& lv)
 
 
 #else
-void strassen_mm(int*** C, int*** A, int*** B, const int& dim, const int& lv)
+void strassen_mm(ring*** C, ring*** A, ring*** B, const int& dim, const int& lv)
 {
 	int dim_2 = dim/2;
 	if (dim <= THRESHOLD)
