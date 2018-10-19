@@ -1,5 +1,8 @@
-// #define DIM 1024
 #define MAX_DEPTH 20  // Requirement: 2^MAX_DEPTH > DIM
+
+#ifndef DIM
+#define DIM 1024
+#endif
 
 #define MOD 10
 

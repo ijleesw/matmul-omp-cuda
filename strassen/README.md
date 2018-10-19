@@ -15,7 +15,7 @@ $ ./test
 $ g++ -O2 -DDIM=<dim_of_matrix> -DTHRESHOLD=<threshold> main.cpp -o test -DOMP -fopenmp
 $ ./test
 
-# With OpenMP on macOS
+# With OpenMP on MacOS
 $ g++ -O2 -DDIM=<dim_of_matrix> -DTHRESHOLD=<threshold> main.cpp -o test -DOMP -Xpreprocessor -fopenmp -lomp
 $ ./test
 ```
@@ -24,28 +24,14 @@ $ ./test
 
 ## Experimental Results
 
-Thresholds for using classical matmul are set to 32 w/o OpenMP and 128 w/ OpenMP. (Thresholds are chosen with coarse search.) Results are averaged over 5 experiments.
+Thresholds for using classical matmul are set to 32 w/o OpenMP and 128 w/ OpenMP. (Thresholds are chosen with coarse hyperparameter search.) `long double` is used for the base ring of matrix. Results are averaged over 5 experiments.
 
 
 
-On Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz (macOS 10.13) :
+On Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz (2 cores 4 threads) :
 
-| Dimension | Strassen | Classical | Strassen (OpenMP) |
-| :-------: | :------: | :-------: | :---------------: |
-|    512    | 0.199279 | 0.0226146 |     0.0304214     |
-|   1024    | 1.40317  | 0.233193  |     0.243375      |
-|   2048    | 9.75089  |  2.07506  |      1.5483       |
-|   4096    | 68.9356  |  19.2629  |      10.6671      |
-
-
-
-On Intel(R) Xeon(R) CPU E5-2620 v3 @ 2.40GHz (Ubuntu 16.04 LTS) :
-
-| Dimension | Strassen | Classical | Strassen (OpenMP) |
-| :-------: | :------: | :-------: | :---------------: |
-|    512    | 0.216104 | 0.320117  |     0.0189048     |
-|   1024    | 1.66836  |  2.54991  |     0.124042      |
-|   2048    | 10.8328  |  20.9902  |     0.888446      |
-|   4096    | 75.8845  |  166.865  |      6.22707      |
-|   8192    |    -     |     -     |      43.9331      |
-
+| Dim  | Strassen (Single) | Classical (Single) | Strassen (Multi) | Classical (Multi) |
+| :--: | :---------------: | :----------------: | :--------------: | :---------------: |
+| 512  |      0.13551      |      0.202261      |    0.0781379     |     0.0940104     |
+| 1024 |      0.95808      |      1.65246       |     0.557298     |     0.730832      |
+| 2048 |      6.75949      |      14.0989       |     3.98302      |      6.1555       |
