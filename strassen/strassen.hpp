@@ -13,10 +13,6 @@
 #include "classical.hpp"
 
 
-extern ring*** A;
-extern ring*** B;
-extern ring*** C;
-
 extern ring*** M1;
 extern ring*** M2;
 extern ring*** M3;

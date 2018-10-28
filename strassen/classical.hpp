@@ -7,11 +7,6 @@
 #endif
 
 
-extern ring*** A;
-extern ring*** B;
-extern ring*** C;
-
-
 #ifndef OMP
 void classical_mm(ring*** C, ring*** A, ring*** B, const int& dim, const int& lv)
 {
