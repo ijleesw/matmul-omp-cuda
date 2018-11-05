@@ -8,15 +8,18 @@
 #endif
 using namespace std;
 
-#include "classical.hpp"
-
+typedef long double ring;
 typedef pair<int, int> pii;
 
-int A[DIM][DIM];
-int B[DIM][DIM];
-int C[DIM][DIM];
+#include "classical.hpp"
 
-int N_TEST = 200;
+
+ring A[DIM][DIM];
+ring B[DIM][DIM];
+ring C[DIM][DIM];
+
+int N_TEST = 20;
+
 
 void init()
 {

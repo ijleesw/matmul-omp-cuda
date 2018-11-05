@@ -15,7 +15,7 @@ $ ./test
 
 ## Experimental Results
 
-Results are averaged over 200 experiments.
+Results are averaged over 200 experiments. 32bits integer is used for the base ring.
 
 
 
