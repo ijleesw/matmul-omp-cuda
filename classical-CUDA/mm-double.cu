@@ -79,9 +79,7 @@ void naive_mm_GPU(ring* A, ring* B, ring* C, const int dim)
 	}
 }
 
-/*
- * Reference: http://cseweb.ucsd.edu/classes/wi12/cse260-a/Lectures/Lec08.pdf
- */
+
 template <typename ring>
 __global__
 void shared_mm_GPU(ring* A, ring* B, ring* C, const int dim)
@@ -112,9 +110,7 @@ void shared_mm_GPU(ring* A, ring* B, ring* C, const int dim)
 	}
 }
 
-/*
- * Reference: https://solarianprogrammer.com/2012/05/31/matrix-multiplication-cuda-cublas-curand-thrust/
- */
+
 void cublas_matmul(cublasHandle_t& handle, const double* A, const double* B, double* C, const int dim)
 {
 	int lda = dim, ldb = dim, ldc = dim;

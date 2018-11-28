@@ -54,3 +54,13 @@ With `double` data type:
 |   4096    | 708.91ms |  975.03ms   |  692.37ms   |
 |   8192    | 6.28788s |  8.35359s   |  5.79862s   |
 
+
+
+
+
+## References
+
+http://cseweb.ucsd.edu/classes/wi12/cse260-a/Lectures/Lec08.pdf
+
+https://solarianprogrammer.com/2012/05/31/matrix-multiplication-cuda-cublas-curand-thrust/
+
