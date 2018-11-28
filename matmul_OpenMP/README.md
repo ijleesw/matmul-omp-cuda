@@ -1,6 +1,6 @@
-# Strassen Algorithm
+# Matrix Multiplication in OpenMP
 
-A C++ Implementation of Strassen Algorithm with OpenMP.
+An OpenMP Implementation of Classical and Strassen Matrix Multiplication.
 
 
 
@@ -24,7 +24,7 @@ $ ./test
 
 ## Experimental Results
 
-Thresholds for using classical matmul are set to 32 w/o OpenMP and 128 w/ OpenMP. (Thresholds are chosen with coarse hyperparameter search.) `long double` is used for the base ring of matrix. Results are averaged over 5 experiments.
+Classical matmul is implemented in cache-efficient version. Thresholds in Strassen for using classical matmul are set to 32 w/o OpenMP and 128 w/ OpenMP (Thresholds are chosen with coarse hyperparameter search). `long double` is used for the base ring of matrix. Results are averaged over 5 experiments.
 
 
 
