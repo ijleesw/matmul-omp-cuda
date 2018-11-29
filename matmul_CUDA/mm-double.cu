@@ -3,13 +3,14 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <sys/time.h>
+#include <assert.h>
 
 #include "utils.h"
+#include "cudaTimer.h"
 
 
 #define BLOCK_SIZE 16
-#define N_TEST 10
+#define N_TEST 50
 #define DEVICE_ID 0
 
 
@@ -44,18 +45,18 @@ void checkResult(ring* hostRef, ring* gpuRef, const int dim, const char* name)
 
 
 template <typename ring>
-void naive_mm_host(ring* A, ring* B, ring* C, const int dim)
+void classicalMatmulHost(ring* A, ring* B, ring* C, const int dim)
 {
 	for (int i = 0; i < dim; ++i)
 	{
-		for (int j = 0; j < dim; ++j)
+		memset(&C[i*dim], 0, dim*sizeof(ring));
+
+		for (int k = 0; k < dim; ++k)
 		{
-			ring sum = 0;
-			for (int k = 0; k < dim; ++k)
+			for (int j = 0; j < dim; ++j)
 			{
-				sum += A[i*dim+k] * B[k*dim+j];
+				C[i*dim+j] += A[i*dim+k] * B[k*dim+j];
 			}
-			C[i*dim+j] = sum;
 		}
 	}
 }
@@ -63,7 +64,7 @@ void naive_mm_host(ring* A, ring* B, ring* C, const int dim)
 
 template <typename ring>
 __global__
-void naive_mm_GPU(ring* A, ring* B, ring* C, const int dim)
+void naiveMatmulGPU(ring* A, ring* B, ring* C, const int dim)
 {
 	int row = blockIdx.y * blockDim.y + threadIdx.y;
 	int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -82,7 +83,7 @@ void naive_mm_GPU(ring* A, ring* B, ring* C, const int dim)
 
 template <typename ring>
 __global__
-void shared_mm_GPU(ring* A, ring* B, ring* C, const int dim)
+void sharedMatmulGPU(ring* A, ring* B, ring* C, const int dim)
 {
 	const int row = blockIdx.y * blockDim.y + threadIdx.y;
 	const int col = blockIdx.x * blockDim.x + threadIdx.x;
@@ -111,32 +112,21 @@ void shared_mm_GPU(ring* A, ring* B, ring* C, const int dim)
 }
 
 
-void cublas_matmul(cublasHandle_t& handle, const double* A, const double* B, double* C, const int dim)
-{
-	int lda = dim, ldb = dim, ldc = dim;
-	const int m = dim, n = dim, k = dim;
-	const double a = 1;
-	const double b = 0;
-	const double *alpha = &a;
-	const double *beta = &b;
-
-	cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, B, ldb, A, lda, beta, C, ldc);
-}
-
-
 int main(int argc, char** argv)
 {
-	if (argc < 2 || argc > 3)
+	if (argc != 3)
 	{
-		printf("Usage: %s <dim> <check (optional)>\n", argv[0]);
+		printf("Usage: %s <dim> <check>\n", argv[0]);
 		exit(0);
 	}
 
 
 	/* Initialize */
 
-	int nDim = atoi(argv[1]), nThreads = BLOCK_SIZE, nBlocks = (nDim+BLOCK_SIZE-1)/BLOCK_SIZE;
-	int check = (argc == 3 ? atoi(argv[2]) : 0);
+	int nDim = atoi(argv[1]);
+	int check = atoi(argv[2]);
+
+	assert(nDim >= BLOCK_SIZE);
 
 	setDeviceAndGetInfo(DEVICE_ID);
 
@@ -163,55 +153,78 @@ int main(int argc, char** argv)
 	cudaMemcpy(d_A, h_A, nBytes, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_B, h_B, nBytes, cudaMemcpyHostToDevice);
 
-	dim3 block(nThreads, nThreads);
-	dim3 grid(nBlocks, nBlocks);
+	dim3 block(BLOCK_SIZE, BLOCK_SIZE);
+	dim3 grid((nDim+BLOCK_SIZE-1)/BLOCK_SIZE, (nDim+BLOCK_SIZE-1)/BLOCK_SIZE);
+
+	CudaTimer ct;
 
 
-	/* Run naive_mm_host */
+	/* Run classicalMatmulHost */
 
 	if (check)
 	{
-		naive_mm_host<double>(h_A, h_B, hostRef, nDim);
+		classicalMatmulHost<double>(h_A, h_B, hostRef, nDim);
 	}
 
 
-	/* Run GPU Naive-MM */
+	/* Run naiveMatmulGPU */
 
+	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
 	{
-		naive_mm_GPU<double><<< grid, block >>>(d_A, d_B, d_C, nDim);
+		naiveMatmulGPU<double><<< grid, block >>>(d_A, d_B, d_C, nDim);
 		cudaDeviceSynchronize();
 	}
+	ct.stop();
+	printf("[naiveMatmulGPU] %.5fms\n", ct.value()/N_TEST);
+
 	if (check)
 	{
 		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<double>(hostRef, gpuRef, nDim, "naive_mm_GPU");
+		checkResult<double>(hostRef, gpuRef, nDim, "naiveMatmulGPU");
 	}
 
 
-	/* Run GPU Shared-MM */
+	/* Run sharedMatmulGPU */
 
+	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
 	{
-		shared_mm_GPU<double><<< grid, block >>>(d_A, d_B, d_C, nDim);
+		sharedMatmulGPU<double><<< grid, block >>>(d_A, d_B, d_C, nDim);
 		cudaDeviceSynchronize();
 	}
+	ct.stop();
+	printf("[sharedMatmulGPU] %.5fms\n", ct.value()/N_TEST);
+
 	if (check)
 	{
 		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<double>(hostRef, gpuRef, nDim, "share_mm_GPU");
+		checkResult<double>(hostRef, gpuRef, nDim, "sharedMatmulGPU");
 	}
 
 
-	/* Run cublasSgemm */
+	/* Run cublasDgemm */
+
+	int lda = nDim, ldb = nDim, ldc = nDim;
+	const int m = nDim, n = nDim, k = nDim;
+	const double a = 1;
+	const double b = 0;
+	const double *alpha = &a;
+	const double *beta = &b;
 
 	cublasHandle_t handle;
 	cublasCreate(&handle);
+
+	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
 	{
-		cublas_matmul(handle, d_A, d_B, d_C, nDim);
+		cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, d_B, ldb, d_A, lda, beta, d_C, ldc);
 	}
+	ct.stop();
+	printf("[cublasDgemm] %.5fms\n", ct.value()/N_TEST);
+
 	cublasDestroy(handle);
+
 	if (check)
 	{
 		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
