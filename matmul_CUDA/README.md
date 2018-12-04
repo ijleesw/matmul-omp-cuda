@@ -11,11 +11,11 @@ A CUDA implementation of naive matmul, 'shared' matmul and Strassen's algorithm.
 ```bash
 $ nvcc -arch=<gpu_architecture> mm-float.cu cudaTimer.cc -o mm-float -lcublas
 $ ./mm-float <dim> <check>
-# All mm-* are analogous to mm-float
+# Other mm-*'s are analogous to mm-float
 
 $ nvcc -arch=<gpu_architecture> strassen-float.cu cudaTimer.cc -o strassen-float -lcublas
 $ ./strassen-float <dim> <threshold> <check>
-# All strassen-* are analogous to strassen-float
+# Other strassen-*'s are analogous to strassen-float
 ```
 
 
