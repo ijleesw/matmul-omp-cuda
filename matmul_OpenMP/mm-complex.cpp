@@ -1,25 +1,15 @@
 #define MAX_DEPTH 20  // Requirement: 2^MAX_DEPTH > DIM
 
-#ifndef DIM
-#define DIM 1024
-#endif
-
 #define MOD 10
 
-#ifdef __APPLE__
-#include "bits/stdc++.h"
-#else
-#include <bits/stdc++.h>
-#endif
+#include <iostream>
+#include <cstdlib>
+#include <algorithm>
+#include <complex>
+#include <omp.h>
 using namespace std;
 
-#ifdef OMP
-#include <omp.h>
-#endif
-
-
-typedef long double ring;
-
+typedef complex<double> ring;
 
 #include "strassen.hpp"
 #include "classical.hpp"
@@ -39,8 +29,11 @@ ring*** M6;
 ring*** M7;
 
 
-int N_WARMUP = 2;
-int N_TEST = 5;
+int DIM;
+int THRESHOLD;
+
+int N_WARMUP = 5;
+int N_TEST = 25;
 
 
 void init_memory()
@@ -64,7 +57,8 @@ void init_memory()
 		A[i] = new ring*[dim];
 		B[i] = new ring*[dim];
 
-		for (int j = 0; j < dim; ++j) {
+		for (int j = 0; j < dim; ++j)
+		{
 			A[i][j] = new ring[dim];
 			B[i][j] = new ring[dim];
 		}
@@ -72,12 +66,14 @@ void init_memory()
 		if (i == 0) {
 			C[i] = new ring*[dim];
 
-			for (int j = 0; j < dim; ++j) {
+			for (int j = 0; j < dim; ++j)
+			{
 				C[i][j] = new ring[dim];
 			}
 		}
 
-		else {  // i >= 1
+		else 
+		{  // i >= 1
 			M1[i] = new ring*[dim];
 			M2[i] = new ring*[dim];
 			M3[i] = new ring*[dim];
@@ -86,7 +82,8 @@ void init_memory()
 			M6[i] = new ring*[dim];
 			M7[i] = new ring*[dim];
 
-			for (int j = 0; j < dim; ++j) {
+			for (int j = 0; j < dim; ++j)
+			{
 				M1[i][j] = new ring[dim];
 				M2[i][j] = new ring[dim];
 				M3[i][j] = new ring[dim];
@@ -104,15 +101,15 @@ void init_memory()
 void reset()
 {
 	int dim = DIM;
+
 	for (int i = 0; i < MAX_DEPTH && dim > 0; ++i)
 	{
-		for (int j = 0; j < dim; ++j) {
+		for (int j = 0; j < dim; ++j)
+		{
 			for (int k = 0; k < dim; ++k)
 			{
-				// A[i][j][k] = rand() % MOD;
-				// B[i][j][k] = rand() % MOD;
-				A[i][j][k] = 1;
-				B[i][j][k] = 1;
+				A[i][j][k] = ring(rand() % MOD - (MOD/2), rand() % MOD - (MOD/2));
+				B[i][j][k] = ring(rand() % MOD - (MOD/2), rand() % MOD - (MOD/2));
 
 				if (i == 0) {
 					C[i][j][k] = 0;
@@ -130,7 +127,16 @@ void reset()
 
 int main(int argc, char** argv)
 {
-	double time_elapsed[300], avg_time;
+	if (argc != 3)
+	{
+		printf("Usage: %s <dim> <threshold>\n", argv[0]);
+		exit(0);
+	}
+
+	DIM = atoi(argv[1]);
+	THRESHOLD = atoi(argv[2]);
+
+	double time_elapsed;
 
 	init_memory();
 	srand(time(0));
@@ -141,45 +147,49 @@ int main(int argc, char** argv)
 	for (int cnt = 0; cnt < N_WARMUP; ++cnt)
 	{
 		reset();
-		strassen_mm(C, A, B, DIM, 0);
+		classical_mm_2(C, A, B, DIM, 0);
 	}
-	cout << "Warm-up done." << endl;
+	printf("Warm-up done.\n");
+
+
+	/* Test classical MM */
+
+	time_elapsed = 0;
+	reset();
+	classical_mm_2(C, A, B, DIM, 0);
+
+	for (int cnt = 0; cnt < N_TEST; ++cnt)
+	{
+		reset();
+
+		tic();
+		classical_mm_2(C, A, B, DIM, 0);
+		toc();
+
+		time_elapsed += get_elapsed_time();
+	}
+
+	printf("[classical_mm] Average time : %.10lfs\n", time_elapsed/N_TEST);
 
 
 	/* Test strassen_mm */
 
-	avg_time = 0;
+	time_elapsed = 0;
+	reset();
+	strassen_mm_2(C, A, B, DIM, 0);
+
 	for (int cnt = 0; cnt < N_TEST; ++cnt)
 	{
 		reset();
 
 		tic();
-		strassen_mm(C, A, B, DIM, 0);
+		strassen_mm_2(C, A, B, DIM, 0);
 		toc();
 
-		time_elapsed[cnt] = get_elapsed_time();
-		avg_time += time_elapsed[cnt];
+		time_elapsed += get_elapsed_time();
 	}
 
-	cout << "[strassen_mm]  Average time : " << avg_time/N_TEST << endl;
-
-
-	/* Test classical_mm */
-
-	avg_time = 0;
-	for (int cnt = 0; cnt < N_TEST; ++cnt)
-	{
-		reset();
-
-		tic();
-		classical_mm(C, A, B, DIM, 0);
-		toc();
-
-		time_elapsed[cnt] = get_elapsed_time();
-		avg_time += time_elapsed[cnt];
-	}
-
-	cout << "[classical_mm] Average time : " << avg_time/N_TEST << endl;
+	printf("[strassen_mm]  Average time : %.10lfs\n", time_elapsed/N_TEST);
 
 
 	return 0;

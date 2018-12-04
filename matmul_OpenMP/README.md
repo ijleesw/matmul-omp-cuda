@@ -7,18 +7,12 @@ An OpenMP Implementation of Classical and Strassen Matrix Multiplication.
 ## Usage
 
 ```bash
-# Without OpenMP
-$ g++ -O2 -DDIM=<dim_of_matrix> -DTHRESHOLD=<threshold> main.cpp -o test
-$ ./test
-
-# With OpenMP on Ubuntu
-$ g++ -O2 -DDIM=<dim_of_matrix> -DTHRESHOLD=<threshold> main.cpp -o test -DOMP -fopenmp
-$ ./test
-
-# With OpenMP on MacOS
-$ g++ -O2 -DDIM=<dim_of_matrix> -DTHRESHOLD=<threshold> main.cpp -o test -DOMP -Xpreprocessor -fopenmp -lomp
-$ ./test
+# On MacOS
+$ g++ -O2 -std=c++11 mm-real.cpp -o mm-real -Xpreprocessor -fopenmp -lomp
+$ ./mm-real <dim> <threshold>
+# Other mm-*'s are analogous to mm-real
 ```
+Data type can be changed by modifying `typedef` in `mm-*.cpp`.
 
 
 
@@ -28,10 +22,10 @@ Classical matmul is implemented in cache-efficient version. Thresholds in Strass
 
 
 
-On Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz (2 cores 4 threads) :
+On Intel(R) Core(TM) i5-7360U CPU @ 2.30GHz (unit is second) :
 
-| Dim  | Strassen (Single) | Classical (Single) | Strassen (Multi) | Classical (Multi) |
-| :--: | :---------------: | :----------------: | :--------------: | :---------------: |
-| 512  |      0.13551      |      0.202261      |    0.0781379     |     0.0940104     |
-| 1024 |      0.95808      |      1.65246       |     0.557298     |     0.730832      |
-| 2048 |      6.75949      |      14.0989       |     3.98302      |      6.1555       |
+| Dim  | Classical | Strassen  |
+| :--: | :-------: | :-------: |
+| 512  | 0.0940104 | 0.0781379 |
+| 1024 | 0.730832  | 0.557298  |
+| 2048 |  6.1555   |  3.98302  |
