@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
+#include <cuComplex.h>
 
 #include <stdio.h>
 #include <time.h>
@@ -20,7 +21,8 @@ void fillMatrix(ring* arr, const int N)
 {
 	for (int i = 0; i < N; ++i)
 	{
-		arr[i] = (ring) (rand() & 0xFF) / 10;
+		arr[i].x = (rand() & 0xFF) / 10;
+		arr[i].y = (rand() & 0xFF) / 10;
 	}
 }
 
@@ -33,7 +35,7 @@ void checkResult(ring* cublasRef, ring* gpuRef, const int dim, const char* name)
 
 	for (int i = 0; i < dim*dim; ++i)
 	{
-		double curr_diff = abs(cublasRef[i] - gpuRef[i]);
+		double curr_diff = cuCabsf(cuCsubf(cublasRef[i], gpuRef[i]));
 		if (curr_diff > max_diff)
 		{
 			max_diff = curr_diff;
@@ -54,10 +56,10 @@ void naiveMatmulGPU(ring* A, ring* B, ring* C, const int dim)
 
 	if (row < dim && col < dim)
 	{
-		ring sum = 0;
+		ring sum = make_cuFloatComplex(0, 0);
 		for (int k = 0; k < dim; ++k)
 		{
-			sum += A[row*dim + k] * B[k*dim + col];
+			sum = cuCaddf(sum, cuCmulf(A[row*dim + k], B[k*dim + col]));
 		}
 		C[row*dim + col] = sum;
 	}
@@ -76,7 +78,7 @@ void sharedMatmulGPU(ring* A, ring* B, ring* C, const int dim)
 
 	if (row < dim && col < dim)
 	{
-		ring sum = 0;
+		ring sum = make_cuFloatComplex(0, 0);
 		for (int k = 0; k < gd; ++k)
 		{
 			_A[threadIdx.y][threadIdx.x] = A[row*dim + k*BLOCK_SIZE + threadIdx.x];
@@ -85,7 +87,7 @@ void sharedMatmulGPU(ring* A, ring* B, ring* C, const int dim)
 
 			for (int l = 0; l < BLOCK_SIZE; ++l)
 			{
-				sum += _A[threadIdx.y][l] * _B[l][threadIdx.x];
+				sum = cuCaddf(sum, cuCmulf(_A[threadIdx.y][l], _B[l][threadIdx.x]));
 			}
 			__syncthreads();
 		}
@@ -113,25 +115,25 @@ int main(int argc, char** argv)
 
 	setDeviceAndGetInfo(DEVICE_ID);
 
-	size_t nBytes = nDim * nDim * sizeof(double);
+	size_t nBytes = nDim * nDim * sizeof(cuFloatComplex);
 
-	double *h_A, *h_B, *cublasRef, *gpuRef;
-	h_A = (double*) malloc(nBytes);
-	h_B = (double*) malloc(nBytes);
-	cublasRef = (double*) malloc(nBytes);
-	gpuRef = (double*) malloc(nBytes);
+	cuFloatComplex *h_A, *h_B, *cublasRef, *gpuRef;
+	h_A = (cuFloatComplex*) malloc(nBytes);
+	h_B = (cuFloatComplex*) malloc(nBytes);
+	cublasRef = (cuFloatComplex*) malloc(nBytes);
+	gpuRef = (cuFloatComplex*) malloc(nBytes);
 
 	srand(0);
-	fillMatrix<double>(h_A, nDim*nDim);
-	fillMatrix<double>(h_B, nDim*nDim);
+	fillMatrix<cuFloatComplex>(h_A, nDim*nDim);
+	fillMatrix<cuFloatComplex>(h_B, nDim*nDim);
 
 	memset(cublasRef, 0, nBytes);
 	memset(gpuRef, 0, nBytes);
 
-	double *d_A, *d_B, *d_C;
-	cudaMalloc((double**) &d_A, nBytes);
-	cudaMalloc((double**) &d_B, nBytes);
-	cudaMalloc((double**) &d_C, nBytes);
+	cuFloatComplex *d_A, *d_B, *d_C;
+	cudaMalloc((cuFloatComplex**) &d_A, nBytes);
+	cudaMalloc((cuFloatComplex**) &d_B, nBytes);
+	cudaMalloc((cuFloatComplex**) &d_C, nBytes);
 
 	cudaMemcpy(d_A, h_A, nBytes, cudaMemcpyHostToDevice);
 	cudaMemcpy(d_B, h_B, nBytes, cudaMemcpyHostToDevice);
@@ -142,14 +144,14 @@ int main(int argc, char** argv)
 	CudaTimer ct;
 
 
-	/* Run cublasDgemm */
+	/* Run cublasCgemm */
 
 	int lda = nDim, ldb = nDim, ldc = nDim;
 	const int m = nDim, n = nDim, k = nDim;
-	const double a = 1;
-	const double b = 0;
-	const double *alpha = &a;
-	const double *beta = &b;
+	const cuFloatComplex a = make_cuFloatComplex(1, 0);
+	const cuFloatComplex b = make_cuFloatComplex(0, 0);
+	const cuFloatComplex *alpha = &a;
+	const cuFloatComplex *beta = &b;
 
 	cublasHandle_t handle;
 	cublasCreate(&handle);
@@ -157,10 +159,10 @@ int main(int argc, char** argv)
 	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
 	{
-		cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, d_B, ldb, d_A, lda, beta, d_C, ldc);
+		cublasCgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, d_B, ldb, d_A, lda, beta, d_C, ldc);
 	}
 	ct.stop();
-	printf("[cublasDgemm] %.5fms\n", ct.value()/N_TEST);
+	printf("[cublasCgemm] %.5fms\n", ct.value()/N_TEST);
 
 	cublasDestroy(handle);
 
@@ -175,7 +177,7 @@ int main(int argc, char** argv)
 	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
 	{
-		naiveMatmulGPU<double><<< grid, block >>>(d_A, d_B, d_C, nDim);
+		naiveMatmulGPU<cuFloatComplex><<< grid, block >>>(d_A, d_B, d_C, nDim);
 		cudaDeviceSynchronize();
 	}
 	ct.stop();
@@ -184,7 +186,7 @@ int main(int argc, char** argv)
 	if (check)
 	{
 		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<double>(cublasRef, gpuRef, nDim, "naiveMatmulGPU");
+		checkResult<cuFloatComplex>(cublasRef, gpuRef, nDim, "naiveMatmulGPU");
 	}
 
 
@@ -193,7 +195,7 @@ int main(int argc, char** argv)
 	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
 	{
-		sharedMatmulGPU<double><<< grid, block >>>(d_A, d_B, d_C, nDim);
+		sharedMatmulGPU<cuFloatComplex><<< grid, block >>>(d_A, d_B, d_C, nDim);
 		cudaDeviceSynchronize();
 	}
 	ct.stop();
@@ -202,7 +204,7 @@ int main(int argc, char** argv)
 	if (check)
 	{
 		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<double>(cublasRef, gpuRef, nDim, "sharedMatmulGPU");
+		checkResult<cuFloatComplex>(cublasRef, gpuRef, nDim, "sharedMatmulGPU");
 	}
 
 

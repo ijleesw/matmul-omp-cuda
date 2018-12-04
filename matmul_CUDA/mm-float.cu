@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -25,14 +26,14 @@ void fillMatrix(ring* arr, const int N)
 
 
 template <typename ring>
-void checkResult(ring* hostRef, ring* gpuRef, const int dim, const char* name)
+void checkResult(ring* cublasRef, ring* gpuRef, const int dim, const char* name)
 {
 	double max_diff = 0;
 	int max_idx = 0;
 
 	for (int i = 0; i < dim*dim; ++i)
 	{
-		double curr_diff = abs(hostRef[i] - gpuRef[i]);
+		double curr_diff = abs(cublasRef[i] - gpuRef[i]);
 		if (curr_diff > max_diff)
 		{
 			max_diff = curr_diff;
@@ -41,24 +42,6 @@ void checkResult(ring* hostRef, ring* gpuRef, const int dim, const char* name)
 	}
 
 	printf("[%s] Max difference is %.8lf at index %d.\n", name, max_diff, max_idx);
-}
-
-
-template <typename ring>
-void classicalMatmulHost(ring* A, ring* B, ring* C, const int dim)
-{
-	for (int i = 0; i < dim; ++i)
-	{
-		memset(&C[i*dim], 0, dim*sizeof(ring));
-
-		for (int k = 0; k < dim; ++k)
-		{
-			for (int j = 0; j < dim; ++j)
-			{
-				C[i*dim+j] += A[i*dim+k] * B[k*dim+j];
-			}
-		}
-	}
 }
 
 
@@ -132,17 +115,17 @@ int main(int argc, char** argv)
 
 	size_t nBytes = nDim * nDim * sizeof(float);
 
-	float *h_A, *h_B, *hostRef, *gpuRef;
+	float *h_A, *h_B, *cublasRef, *gpuRef;
 	h_A = (float*) malloc(nBytes);
 	h_B = (float*) malloc(nBytes);
-	hostRef = (float*) malloc(nBytes);
+	cublasRef = (float*) malloc(nBytes);
 	gpuRef = (float*) malloc(nBytes);
 
 	srand(0);
 	fillMatrix<float>(h_A, nDim*nDim);
 	fillMatrix<float>(h_B, nDim*nDim);
 
-	memset(hostRef, 0, nBytes);
+	memset(cublasRef, 0, nBytes);
 	memset(gpuRef, 0, nBytes);
 
 	float *d_A, *d_B, *d_C;
@@ -157,50 +140,6 @@ int main(int argc, char** argv)
 	dim3 grid((nDim+BLOCK_SIZE-1)/BLOCK_SIZE, (nDim+BLOCK_SIZE-1)/BLOCK_SIZE);
 
 	CudaTimer ct;
-
-
-	/* Run classicalMatmulHost */
-
-	if (check)
-	{
-		classicalMatmulHost<float>(h_A, h_B, hostRef, nDim);
-	}
-
-
-	/* Run naiveMatmulGPU */
-
-	ct.start();
-	for (int i = 0; i < N_TEST; ++i)
-	{
-		naiveMatmulGPU<float><<< grid, block >>>(d_A, d_B, d_C, nDim);
-		cudaDeviceSynchronize();
-	}
-	ct.stop();
-	printf("[naiveMatmulGPU] %.5fms\n", ct.value()/N_TEST);
-
-	if (check)
-	{
-		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<float>(hostRef, gpuRef, nDim, "naiveMatmulGPU");
-	}
-
-
-	/* Run sharedMatmulGPU */
-
-	ct.start();
-	for (int i = 0; i < N_TEST; ++i)
-	{
-		sharedMatmulGPU<float><<< grid, block >>>(d_A, d_B, d_C, nDim);
-		cudaDeviceSynchronize();
-	}
-	ct.stop();
-	printf("[sharedMatmulGPU] %.5fms\n", ct.value()/N_TEST);
-
-	if (check)
-	{
-		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<float>(hostRef, gpuRef, nDim, "sharedMatmulGPU");
-	}
 
 
 	/* Run cublasSgemm */
@@ -227,8 +166,43 @@ int main(int argc, char** argv)
 
 	if (check)
 	{
+		cudaMemcpy(cublasRef, d_C, nBytes, cudaMemcpyDeviceToHost);
+	}
+
+
+	/* Run naiveMatmulGPU */
+
+	ct.start();
+	for (int i = 0; i < N_TEST; ++i)
+	{
+		naiveMatmulGPU<float><<< grid, block >>>(d_A, d_B, d_C, nDim);
+		cudaDeviceSynchronize();
+	}
+	ct.stop();
+	printf("[naiveMatmulGPU] %.5fms\n", ct.value()/N_TEST);
+
+	if (check)
+	{
 		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
-		checkResult<float>(hostRef, gpuRef, nDim, "cublasSgemm");
+		checkResult<float>(cublasRef, gpuRef, nDim, "naiveMatmulGPU");
+	}
+
+
+	/* Run sharedMatmulGPU */
+
+	ct.start();
+	for (int i = 0; i < N_TEST; ++i)
+	{
+		sharedMatmulGPU<float><<< grid, block >>>(d_A, d_B, d_C, nDim);
+		cudaDeviceSynchronize();
+	}
+	ct.stop();
+	printf("[sharedMatmulGPU] %.5fms\n", ct.value()/N_TEST);
+
+	if (check)
+	{
+		cudaMemcpy(gpuRef, d_C, nBytes, cudaMemcpyDeviceToHost);
+		checkResult<float>(cublasRef, gpuRef, nDim, "sharedMatmulGPU");
 	}
 
 
@@ -242,7 +216,7 @@ int main(int argc, char** argv)
 
 	free(h_A);
 	free(h_B);
-	free(hostRef);
+	free(cublasRef);
 	free(gpuRef);
 
 	printf("Done.\n");

@@ -1,5 +1,6 @@
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -15,7 +16,7 @@
 #define MAX_DEPTH 20
 
 
-float *h_A, *h_B, *strassenRef, *cublasRef;
+float *h_A, *h_B, *matmulRef, *cublasRef;
 float *d_A[MAX_DEPTH], *d_B[MAX_DEPTH], *d_C[MAX_DEPTH];
 float *d_M1[MAX_DEPTH], *d_M2[MAX_DEPTH], *d_M3[MAX_DEPTH], *d_M4[MAX_DEPTH], *d_M5[MAX_DEPTH], *d_M6[MAX_DEPTH], *d_M7[MAX_DEPTH];
 
@@ -31,7 +32,7 @@ void fillMatrix(ring* arr, const int N)
 
 
 template <typename ring>
-void checkResult(ring* hostRef, ring* gpuRef, const int dim, const char* name)
+void checkResult(ring* lhs, ring* rhs, const int dim, const char* name)
 {
 	double max_diff = 0;
 	double avg_diff = 0;
@@ -39,7 +40,7 @@ void checkResult(ring* hostRef, ring* gpuRef, const int dim, const char* name)
 
 	for (int i = 0; i < dim*dim; ++i)
 	{
-		double curr_diff = abs(hostRef[i] - gpuRef[i]);
+		double curr_diff = abs(lhs[i] - rhs[i]);
 		avg_diff += curr_diff;
 		if (curr_diff > max_diff)
 		{
@@ -49,7 +50,7 @@ void checkResult(ring* hostRef, ring* gpuRef, const int dim, const char* name)
 	}
 	avg_diff /= (dim*dim);
 
-	printf("[%s] Avg difference is %.8lf. Max difference is %.8lf at index %d.\n", name, avg_diff, max_diff, max_idx);
+	printf("[%s] Avg diff is %.8lf. Max diff is %.8lf at index %d.\n", name, avg_diff, max_diff, max_idx);
 }
 
 
@@ -190,6 +191,9 @@ int main(int argc, char** argv)
 	int threshold = atoi(argv[2]);
 	int check = atoi(argv[3]);
 
+	dim3 block(BLOCK_SIZE, BLOCK_SIZE);
+	dim3 grid((nDim+BLOCK_SIZE-1)/BLOCK_SIZE, (nDim+BLOCK_SIZE-1)/BLOCK_SIZE);
+
 	assert(nDim >= threshold && threshold >= BLOCK_SIZE);
 
 	setDeviceAndGetInfo(DEVICE_ID);
@@ -198,7 +202,7 @@ int main(int argc, char** argv)
 
 	h_A = (float*) malloc(nBytes);
 	h_B = (float*) malloc(nBytes);
-	strassenRef = (float*) malloc(nBytes);
+	matmulRef = (float*) malloc(nBytes);
 	cublasRef = (float*) malloc(nBytes);
 
 	srand(0);
@@ -234,10 +238,37 @@ int main(int argc, char** argv)
 	cublasHandle_t handle;
 	cublasCreate(&handle);
 
+	CudaTimer ct;
+
+
+	/* Prepare result */
+
+	if (check)
+	{
+		cublasMatmul(handle, d_A[0], d_B[0], d_C[0], nDim);
+		cudaMemcpy(cublasRef, d_C[0], nBytes, cudaMemcpyDeviceToHost);
+	}
+
+
+	/* Run classicalMatmul */
+
+	ct.start();
+	for (int i = 0; i < N_TEST; ++i)
+	{
+		classicalMatmul<float><<< grid, block >>>(d_A[0], d_B[0], d_C[0], nDim);
+		cudaDeviceSynchronize();
+	}
+	ct.stop();
+	printf("[classicalMatmul] %.5fms\n", ct.value()/N_TEST);
+
+	if (check)
+	{
+		cudaMemcpy(matmulRef, d_C[0], nBytes, cudaMemcpyDeviceToHost);
+		checkResult<float>(cublasRef, matmulRef, nDim, "classicalMatmul");
+	}
+
 
 	/* Run strassenMatmul */
-
-	CudaTimer ct;
 
 	ct.start();
 	for (int i = 0; i < N_TEST; ++i)
@@ -246,17 +277,13 @@ int main(int argc, char** argv)
 	}
 	ct.stop();
 
-	cudaMemcpy(strassenRef, d_C[0], nBytes, cudaMemcpyDeviceToHost);
+	cudaMemcpy(matmulRef, d_C[0], nBytes, cudaMemcpyDeviceToHost);
 	printf("[strassenMatmul] %.5fms\n", ct.value()/N_TEST);
-
-
-	/* Check with cuBLAS */
 
 	if (check)
 	{
-		cublasMatmul(handle, d_A[0], d_B[0], d_C[0], nDim);
-		cudaMemcpy(cublasRef, d_C[0], nBytes, cudaMemcpyDeviceToHost);
-		checkResult<float>(cublasRef, strassenRef, nDim, "strassenMatmul");
+		cudaMemcpy(matmulRef, d_C[0], nBytes, cudaMemcpyDeviceToHost);
+		checkResult<float>(cublasRef, matmulRef, nDim, "strassenMatmul");
 	}
 
 
@@ -289,7 +316,7 @@ int main(int argc, char** argv)
 
 	free(h_A);
 	free(h_B);
-	free(strassenRef);
+	free(matmulRef);
 	free(cublasRef);
 
 	printf("Done.\n");
