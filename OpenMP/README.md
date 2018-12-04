@@ -1,6 +1,6 @@
 # Matrix Multiplication in OpenMP
 
-An OpenMP Implementation of Classical and Strassen Matrix Multiplication.
+An OpenMP implementation of classical and Strassen's matrix multiplication.
 
 
 
@@ -10,7 +10,12 @@ An OpenMP Implementation of Classical and Strassen Matrix Multiplication.
 # On MacOS
 $ g++ -O2 -std=c++11 mm-real.cpp -o mm-real -Xpreprocessor -fopenmp -lomp
 $ ./mm-real <dim> <threshold>
-# Other mm-*'s are analogous to mm-real
+
+$ g++ -O2 -std=c++11 mm-complex.cpp -o mm-complex -Xpreprocessor -fopenmp -lomp
+$ ./mm-complex <dim> <threshold>
+
+$ g++ -O2 -std=c++11 mm-gmp.cpp -o mm-gmp -Xpreprocessor -fopenmp -lomp -lgmp -lgmpxx
+$ ./mm-gmp <dim> <threshold>
 ```
 Data type can be changed by modifying `typedef` in `mm-*.cpp`.
 
