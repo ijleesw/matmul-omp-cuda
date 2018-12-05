@@ -121,7 +121,7 @@ cuDoublePoly4 operator*(const cuDoublePoly4& a, const double& b)
 ////////////////////////////////////////////////////////////////////////////////
 
 static __inline__ __host__ __device__
-float LinfDistPoly4(const cuFloatPoly4& a)
+float L1DistPoly4(const cuFloatPoly4& a)
 {
 	return (a.x > 0 ? a.x : -a.x)
 	     + (a.y > 0 ? a.y : -a.y)
@@ -130,7 +130,7 @@ float LinfDistPoly4(const cuFloatPoly4& a)
 }
 
 static __inline__ __host__ __device__
-double LinfDistPoly4(const cuDoublePoly4& a)
+double L1DistPoly4(const cuDoublePoly4& a)
 {
 	return (a.x > 0 ? a.x : -a.x)
 	     + (a.y > 0 ? a.y : -a.y)

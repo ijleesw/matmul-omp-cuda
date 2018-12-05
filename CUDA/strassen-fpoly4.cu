@@ -44,7 +44,7 @@ void checkResult(ring* lhs, ring* rhs, const int dim, const char* name)
 
 	for (int i = 0; i < dim*dim; ++i)
 	{
-		double curr_diff = LinfDistPoly4(lhs[i] - rhs[i]);
+		double curr_diff = L1DistPoly4(lhs[i] - rhs[i]);
 		avg_diff += curr_diff;
 		if (curr_diff > max_diff)
 		{
