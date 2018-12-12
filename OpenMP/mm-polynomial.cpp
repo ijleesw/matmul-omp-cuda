@@ -8,7 +8,8 @@
 #include <omp.h>
 using namespace std;
 
-typedef double ring;
+#include "polynomial.hpp"
+typedef Polynomial<float> ring;
 
 #include "strassen.hpp"
 #include "classical.hpp"
@@ -107,8 +108,8 @@ void reset()
 		{
 			for (int k = 0; k < dim; ++k)
 			{
-				A[i][j][k] = (ring) (rand() % MOD - (MOD/2));
-				B[i][j][k] = (ring) (rand() % MOD - (MOD/2));
+				A[i][j][k] = ring();
+				B[i][j][k] = ring();
 
 				if (i == 0) {
 					C[i][j][k] = 0;
@@ -146,7 +147,7 @@ int main(int argc, char** argv)
 	for (int cnt = 0; cnt < N_WARMUP; ++cnt)
 	{
 		reset();
-		classical_mm_2(C, A, B, DIM, 0);
+		classical_mm_1(C, A, B, DIM, 0);
 	}
 	printf("Warm-up done.\n");
 
@@ -155,14 +156,14 @@ int main(int argc, char** argv)
 
 	time_elapsed = 0;
 	reset();
-	classical_mm_2(C, A, B, DIM, 0);
+	classical_mm_1(C, A, B, DIM, 0);
 
 	for (int cnt = 0; cnt < N_TEST; ++cnt)
 	{
 		reset();
 
 		tic();
-		classical_mm_2(C, A, B, DIM, 0);
+		// classical_mm_1(C, A, B, DIM, 0);
 		toc();
 
 		time_elapsed += get_elapsed_time();
@@ -175,14 +176,14 @@ int main(int argc, char** argv)
 
 	time_elapsed = 0;
 	reset();
-	strassen_mm_2(C, A, B, DIM, 0);
+	strassen_mm_1(C, A, B, DIM, 0);
 
 	for (int cnt = 0; cnt < N_TEST; ++cnt)
 	{
 		reset();
 
 		tic();
-		strassen_mm_2(C, A, B, DIM, 0);
+		strassen_mm_1(C, A, B, DIM, 0);
 		toc();
 
 		time_elapsed += get_elapsed_time();

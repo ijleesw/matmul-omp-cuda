@@ -14,6 +14,9 @@ $ ./mm-real <dim> <threshold>
 $ g++ -O2 -std=c++11 mm-complex.cpp -o mm-complex -Xpreprocessor -fopenmp -lomp
 $ ./mm-complex <dim> <threshold>
 
+$ g++ -O2 -std=c++11 mm-polynomial.cpp -o mm-polynomial -DDEG=<deg> -Xpreprocessor -fopenmp -lomp
+$ ./mm-polynomial <dim> <threshold>
+
 $ g++ -O2 -std=c++11 mm-gmp.cpp -o mm-gmp -Xpreprocessor -fopenmp -lomp -lgmp -lgmpxx
 $ ./mm-gmp <dim> <threshold>
 ```
