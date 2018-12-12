@@ -6,7 +6,7 @@ An implementation of classical and Strassen's matrix multiplication in CUDA and 
 
 ## Description
 
-This code is written for experimental results in my bachelor thesis, _Investigation and Experiments on Strassen's Algorithm_. You can see the paper in [here](Investigation\ and\ Experiments\ on\ Strassen's\ Algorithm.pdf).
+This code is written for experimental results in my bachelor thesis, _Investigation and Experiments on Strassen's Algorithm_. You can see the paper in [here](Investigation-and-Experiments-on-Strassen's-Algorithm.pdf).
 
 See `README.md` in each subdirectory for the corresponding implementation.
 
